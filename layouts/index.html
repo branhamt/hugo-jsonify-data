@@ -1,0 +1,67 @@
+{{ define "main" }}
+
+  {{ $data := slice }}
+  {{ range $index, $page := (where .Site.RegularPages "Section" "books") }}
+
+    {{/* Create star ratings */}}
+    {{ $astRating := slice }} 
+    {{ range seq .Params.rating }}
+      {{ $astRating = $astRating | append "*" }}
+    {{ end }}
+    {{ $astRating = delimit $astRating "" }}
+
+    {{/* Create image text overlay */}}
+    {{ $text := .Title }}
+    {{ $overlay := images.Text $text }}
+    {{ $imgHTML := "" }}
+    {{ with .Resources.Get "image.jpg" }}
+      {{ with . | images.Filter $overlay }}
+        {{ $permalink := .RelPermalink }}
+        {{ $width := .Width }}
+        {{ $height := .Height }}
+        {{ $alt := $text }}
+        {{ $imgHTML = printf "<img src='%s' width='%d' height='%d' alt='%s'>" $permalink $width $height $alt }}
+      {{ end }}
+    {{ end }}
+
+    {{/* Create data that will become JSON */}}
+    {{ $data = $data | append (dict
+    "title" .Title
+    "price" .Params.price
+    "rating" .Params.rating
+    "astRating" $astRating 
+    "ref" .Permalink
+    "img" $imgHTML
+    )
+    }}
+  {{ end }}
+
+  {{/* Sort the data (faster than JS!) */}}
+  {{ $data = sort $data "price" "asc" }} {{/* optional */}}
+
+  {{/* Convert data to JSON */}}
+  {{ $data = ($data | jsonify) }}
+
+  {{/* See what the JSON data looks like */}} 
+  {{ $data }} {{/* optional */}}
+
+  <script>
+    // Parse the JSON data
+    const bookData = JSON.parse({{ $data }})
+    console.log(bookData)
+  </script>
+
+  {{/* Use Alpine JS to display data and HTML */}}
+  <div x-data="bookData">
+    <template x-for="book in bookData" :key="book.title">
+      <div style="margin-top: 2em; padding: 2em; border: 1px gray solid;">
+        <a :href="book.ref"><h2 x-text="book.title"></h2></a>
+        <p>$<span x-text="book.price"></span></p>
+        <p><span x-text="book.rating"></span>/10 stars</p>
+        <span x-text="book.astRating"></span>
+        <div x-html="book.img"></div>
+      </div>
+    </template>
+  </div>
+
+{{ end }}

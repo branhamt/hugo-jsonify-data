@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="{{ .Page.Language | default " en" }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {{ hugo.Generator }}
+  </head>
+
+  <body>
+    <main>
+      {{- block "main" . }}{{- end }}
+    </main>
+
+    {{- $options := dict "targetPath" "js/bundle.js" -}}
+    {{- $jsBundle := resources.Get "js/main.js" | js.Build $options -}}
+    <script
+      src="{{ $jsBundle.RelPermalink }}"
+      integrity="{{ $jsBundle.Data.Integrity }}"
+      defer>
+    </script> 
+
+  </body>
+</html>
